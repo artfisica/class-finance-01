@@ -1,0 +1,1125 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Tu Dinero, Tu Futuro · Calculadora de Interés Compuesto</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700;900&family=DM+Sans:wght@300;400;500&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<style>
+  :root {
+    --ink:    #0f1117;
+    --paper:  #fafaf7;
+    --cream:  #f2f0e8;
+    --green:  #1a6b45;
+    --green2: #2d9b63;
+    --green3: #e8f5ee;
+    --red:    #b83232;
+    --red2:   #fdeaea;
+    --amber:  #b07000;
+    --amber2: #fff8e0;
+    --muted:  #6b7280;
+    --border: #e2e0d8;
+    --mono:   'DM Mono', monospace;
+    --serif:  'Playfair Display', Georgia, serif;
+    --sans:   'DM Sans', system-ui, sans-serif;
+  }
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  html { scroll-behavior: smooth; }
+
+  body {
+    font-family: var(--sans);
+    background: var(--paper);
+    color: var(--ink);
+    line-height: 1.7;
+    overflow-x: hidden;
+  }
+
+  /* ── HERO ─────────────────────────────────────────────── */
+  .hero {
+    min-height: 100vh;
+    display: grid;
+    grid-template-rows: auto 1fr auto;
+    background: var(--ink);
+    color: var(--paper);
+    position: relative;
+    overflow: hidden;
+  }
+
+  .hero::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background:
+      radial-gradient(ellipse 80% 60% at 20% 80%, rgba(26,107,69,.35) 0%, transparent 60%),
+      radial-gradient(ellipse 50% 40% at 80% 20%, rgba(45,155,99,.15) 0%, transparent 55%);
+    pointer-events: none;
+  }
+
+  .hero-nav {
+    padding: 2rem 3rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    position: relative;
+    z-index: 2;
+    border-bottom: 1px solid rgba(255,255,255,.08);
+  }
+  .hero-nav .logo {
+    font-family: var(--serif);
+    font-size: 1.1rem;
+    letter-spacing: .02em;
+    color: var(--paper);
+    opacity: .9;
+  }
+  .hero-nav .badge {
+    font-size: .72rem;
+    letter-spacing: .1em;
+    text-transform: uppercase;
+    color: var(--green2);
+    border: 1px solid var(--green2);
+    padding: .25rem .75rem;
+    border-radius: 2rem;
+    font-family: var(--mono);
+  }
+
+  .hero-body {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    padding: 4rem 3rem;
+    position: relative;
+    z-index: 2;
+    max-width: 900px;
+  }
+
+  .hero-eyebrow {
+    font-family: var(--mono);
+    font-size: .8rem;
+    letter-spacing: .15em;
+    text-transform: uppercase;
+    color: var(--green2);
+    margin-bottom: 1.5rem;
+    display: flex;
+    align-items: center;
+    gap: .75rem;
+  }
+  .hero-eyebrow::before {
+    content: '';
+    display: block;
+    width: 2rem;
+    height: 1px;
+    background: var(--green2);
+  }
+
+  .hero-title {
+    font-family: var(--serif);
+    font-size: clamp(3rem, 7vw, 6rem);
+    line-height: 1.05;
+    font-weight: 900;
+    margin-bottom: 1.5rem;
+    letter-spacing: -.02em;
+  }
+  .hero-title em {
+    font-style: normal;
+    color: var(--green2);
+  }
+
+  .hero-sub {
+    font-size: 1.15rem;
+    color: rgba(250,250,247,.65);
+    max-width: 540px;
+    margin-bottom: 3rem;
+    font-weight: 300;
+  }
+
+  .hero-stats {
+    display: flex;
+    gap: 3rem;
+    flex-wrap: wrap;
+  }
+  .hstat {
+    display: flex;
+    flex-direction: column;
+    gap: .25rem;
+  }
+  .hstat-val {
+    font-family: var(--serif);
+    font-size: 2.5rem;
+    font-weight: 700;
+    color: var(--paper);
+    line-height: 1;
+  }
+  .hstat-val.good { color: var(--green2); }
+  .hstat-val.bad  { color: #e05c5c; }
+  .hstat-lbl {
+    font-size: .78rem;
+    color: rgba(250,250,247,.5);
+    letter-spacing: .06em;
+    text-transform: uppercase;
+    font-family: var(--mono);
+  }
+
+  .hero-scroll {
+    padding: 2rem 3rem;
+    display: flex;
+    justify-content: center;
+    position: relative;
+    z-index: 2;
+  }
+  .scroll-arrow {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: .5rem;
+    color: rgba(255,255,255,.3);
+    font-size: .72rem;
+    letter-spacing: .1em;
+    text-transform: uppercase;
+    font-family: var(--mono);
+    animation: bounce 2s infinite;
+  }
+  .scroll-arrow svg { opacity: .5; }
+  @keyframes bounce {
+    0%,100% { transform: translateY(0); }
+    50% { transform: translateY(6px); }
+  }
+
+  /* ── LAYOUT ───────────────────────────────────────────── */
+  .page { max-width: 1100px; margin: 0 auto; padding: 0 2rem; }
+
+  section { padding: 5rem 0; }
+
+  .section-label {
+    font-family: var(--mono);
+    font-size: .72rem;
+    letter-spacing: .18em;
+    text-transform: uppercase;
+    color: var(--green);
+    margin-bottom: 1rem;
+    display: flex;
+    align-items: center;
+    gap: .75rem;
+  }
+  .section-label::before {
+    content: '';
+    display: block;
+    width: 1.5rem;
+    height: 1px;
+    background: var(--green);
+  }
+
+  .section-title {
+    font-family: var(--serif);
+    font-size: clamp(2rem, 4vw, 3rem);
+    font-weight: 700;
+    line-height: 1.15;
+    margin-bottom: 1.25rem;
+    letter-spacing: -.02em;
+  }
+
+  .section-lead {
+    font-size: 1.05rem;
+    color: var(--muted);
+    max-width: 620px;
+    margin-bottom: 3rem;
+    font-weight: 300;
+  }
+
+  /* ── CONTROLS ─────────────────────────────────────────── */
+  .controls-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1.5rem 3rem;
+    margin-bottom: 3rem;
+  }
+  @media (max-width: 640px) { .controls-grid { grid-template-columns: 1fr; } }
+
+  .ctrl-group { display: flex; flex-direction: column; gap: .5rem; }
+
+  .ctrl-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+  }
+  .ctrl-label {
+    font-size: .8rem;
+    letter-spacing: .08em;
+    text-transform: uppercase;
+    color: var(--muted);
+    font-family: var(--mono);
+  }
+  .ctrl-val {
+    font-family: var(--mono);
+    font-size: 1.05rem;
+    font-weight: 500;
+    color: var(--ink);
+  }
+
+  input[type=range] {
+    -webkit-appearance: none;
+    width: 100%;
+    height: 3px;
+    background: var(--border);
+    border-radius: 2px;
+    outline: none;
+    cursor: pointer;
+  }
+  input[type=range]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 18px; height: 18px;
+    border-radius: 50%;
+    background: var(--green);
+    box-shadow: 0 0 0 3px var(--paper), 0 0 0 5px var(--green);
+    transition: transform .15s;
+  }
+  input[type=range]:hover::-webkit-slider-thumb { transform: scale(1.2); }
+  input[type=range]::-moz-range-thumb {
+    width: 18px; height: 18px;
+    border-radius: 50%;
+    background: var(--green);
+    border: none;
+    box-shadow: 0 0 0 3px var(--paper), 0 0 0 5px var(--green);
+  }
+
+  .infl-presets {
+    display: flex;
+    gap: .5rem;
+    flex-wrap: wrap;
+    margin-top: .5rem;
+  }
+  .preset-btn {
+    font-size: .7rem;
+    font-family: var(--mono);
+    padding: .2rem .7rem;
+    border-radius: 2rem;
+    border: 1px solid var(--border);
+    background: transparent;
+    color: var(--muted);
+    cursor: pointer;
+    transition: all .2s;
+    letter-spacing: .05em;
+  }
+  .preset-btn:hover { background: var(--green3); border-color: var(--green); color: var(--green); }
+  .preset-btn.active { background: var(--green); border-color: var(--green); color: white; }
+
+  .divider {
+    border: none;
+    border-top: 1px solid var(--border);
+    margin: 1.5rem 0;
+  }
+
+  /* ── KPI CARDS ────────────────────────────────────────── */
+  .kpi-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 1px;
+    background: var(--border);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    overflow: hidden;
+    margin-bottom: 3rem;
+  }
+  @media (max-width: 768px) { .kpi-grid { grid-template-columns: 1fr 1fr; } }
+  @media (max-width: 480px) { .kpi-grid { grid-template-columns: 1fr; } }
+
+  .kpi {
+    background: var(--paper);
+    padding: 1.75rem 1.5rem;
+    display: flex;
+    flex-direction: column;
+    gap: .4rem;
+  }
+  .kpi-label {
+    font-size: .7rem;
+    letter-spacing: .12em;
+    text-transform: uppercase;
+    color: var(--muted);
+    font-family: var(--mono);
+  }
+  .kpi-value {
+    font-family: var(--serif);
+    font-size: 1.9rem;
+    font-weight: 700;
+    line-height: 1;
+    color: var(--ink);
+    transition: all .4s;
+  }
+  .kpi-value.green { color: var(--green); }
+  .kpi-value.red   { color: var(--red); }
+  .kpi-sub {
+    font-size: .78rem;
+    color: var(--muted);
+    font-weight: 300;
+  }
+
+  /* ── CHART ────────────────────────────────────────────── */
+  .chart-wrap {
+    position: relative;
+    width: 100%;
+    height: 380px;
+    margin-bottom: 1rem;
+  }
+
+  .chart-legend {
+    display: flex;
+    gap: 1.5rem;
+    flex-wrap: wrap;
+    margin-top: 1rem;
+    padding-top: 1rem;
+    border-top: 1px solid var(--border);
+  }
+  .legend-item {
+    display: flex;
+    align-items: center;
+    gap: .5rem;
+    font-size: .8rem;
+    color: var(--muted);
+    font-family: var(--mono);
+  }
+  .legend-dot {
+    width: 10px; height: 10px;
+    border-radius: 2px;
+    flex-shrink: 0;
+  }
+
+  .view-toggle {
+    display: flex;
+    gap: .5rem;
+    margin-bottom: 1.5rem;
+  }
+  .view-btn {
+    font-size: .78rem;
+    font-family: var(--mono);
+    padding: .4rem 1.1rem;
+    border-radius: 2rem;
+    border: 1px solid var(--border);
+    background: transparent;
+    color: var(--muted);
+    cursor: pointer;
+    transition: all .2s;
+    letter-spacing: .05em;
+  }
+  .view-btn.active {
+    background: var(--ink);
+    border-color: var(--ink);
+    color: var(--paper);
+  }
+
+  /* ── INSIGHT BOX ──────────────────────────────────────── */
+  .insight {
+    background: var(--cream);
+    border-left: 3px solid var(--green);
+    padding: 1.25rem 1.5rem;
+    border-radius: 0 8px 8px 0;
+    margin: 2rem 0;
+    font-size: .95rem;
+    color: var(--ink);
+    transition: all .4s;
+  }
+  .insight strong { color: var(--green); }
+  .insight.danger { border-color: var(--red); background: var(--red2); }
+  .insight.danger strong { color: var(--red); }
+  .insight.warn { border-color: var(--amber); background: var(--amber2); }
+  .insight.warn strong { color: var(--amber); }
+
+  /* ── EROSION SECTION ──────────────────────────────────── */
+  .erosion-vis {
+    display: flex;
+    flex-direction: column;
+    gap: .75rem;
+    margin: 2rem 0;
+  }
+  .erosion-row {
+    display: grid;
+    grid-template-columns: 80px 1fr 130px;
+    align-items: center;
+    gap: 1rem;
+  }
+  .erosion-year {
+    font-family: var(--mono);
+    font-size: .8rem;
+    color: var(--muted);
+    text-align: right;
+  }
+  .erosion-bar-wrap {
+    height: 28px;
+    background: var(--border);
+    border-radius: 4px;
+    overflow: hidden;
+  }
+  .erosion-bar {
+    height: 100%;
+    border-radius: 4px;
+    transition: width .6s cubic-bezier(.4,0,.2,1);
+    display: flex;
+    align-items: center;
+    padding-left: .6rem;
+  }
+  .erosion-amount {
+    font-family: var(--mono);
+    font-size: .82rem;
+    font-weight: 500;
+    text-align: right;
+  }
+
+  /* ── SCENARIOS TABLE ──────────────────────────────────── */
+  .table-wrap {
+    overflow-x: auto;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+  }
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: .88rem;
+    min-width: 600px;
+  }
+  thead tr {
+    background: var(--ink);
+    color: var(--paper);
+  }
+  thead th {
+    padding: .9rem 1rem;
+    text-align: left;
+    font-family: var(--mono);
+    font-size: .72rem;
+    letter-spacing: .1em;
+    text-transform: uppercase;
+    font-weight: 400;
+  }
+  tbody tr { border-bottom: 1px solid var(--border); transition: background .15s; }
+  tbody tr:last-child { border-bottom: none; }
+  tbody tr:hover { background: var(--cream); }
+  tbody tr.highlight { background: var(--green3); }
+  tbody td {
+    padding: .85rem 1rem;
+    color: var(--muted);
+    font-family: var(--mono);
+    font-size: .83rem;
+  }
+  tbody td:first-child { color: var(--ink); font-family: var(--sans); font-size: .9rem; }
+  .gain-pos { color: var(--green); font-weight: 500; }
+  .gain-neg { color: var(--red); font-weight: 500; }
+
+  /* ── RULES SECTION ────────────────────────────────────── */
+  .rules-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1.5rem;
+    margin-top: 2rem;
+  }
+  @media (max-width: 640px) { .rules-grid { grid-template-columns: 1fr; } }
+
+  .rule-card {
+    padding: 1.75rem;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    transition: all .2s;
+    background: var(--paper);
+  }
+  .rule-card:hover {
+    border-color: var(--green);
+    background: var(--green3);
+    transform: translateY(-2px);
+  }
+  .rule-num {
+    font-family: var(--serif);
+    font-size: 3rem;
+    font-weight: 900;
+    color: var(--border);
+    line-height: 1;
+    margin-bottom: .5rem;
+  }
+  .rule-title { font-weight: 500; margin-bottom: .4rem; font-size: .95rem; }
+  .rule-body  { font-size: .85rem; color: var(--muted); font-weight: 300; line-height: 1.6; }
+
+  /* ── DARK CALLOUT ─────────────────────────────────────── */
+  .callout-dark {
+    background: var(--ink);
+    color: var(--paper);
+    border-radius: 16px;
+    padding: 3rem;
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 2rem;
+    align-items: center;
+    margin: 3rem 0;
+  }
+  @media (max-width: 640px) { .callout-dark { grid-template-columns: 1fr; } }
+  .callout-dark .title {
+    font-family: var(--serif);
+    font-size: 2rem;
+    font-weight: 700;
+    margin-bottom: .75rem;
+    line-height: 1.2;
+  }
+  .callout-dark .sub { color: rgba(250,250,247,.6); font-size: .95rem; font-weight: 300; }
+  .callout-dark .stat-big {
+    text-align: center;
+    padding: 1.5rem 2rem;
+    background: rgba(255,255,255,.05);
+    border-radius: 12px;
+    border: 1px solid rgba(255,255,255,.1);
+    white-space: nowrap;
+  }
+  .callout-dark .stat-big .val {
+    font-family: var(--serif);
+    font-size: 3rem;
+    font-weight: 900;
+    color: var(--green2);
+    line-height: 1;
+  }
+  .callout-dark .stat-big .lbl {
+    font-size: .72rem;
+    color: rgba(250,250,247,.4);
+    font-family: var(--mono);
+    letter-spacing: .1em;
+    text-transform: uppercase;
+    margin-top: .4rem;
+  }
+
+  /* ── FOOTER ───────────────────────────────────────────── */
+  footer {
+    background: var(--ink);
+    color: rgba(250,250,247,.4);
+    text-align: center;
+    padding: 2.5rem;
+    font-size: .78rem;
+    font-family: var(--mono);
+    line-height: 1.8;
+    letter-spacing: .04em;
+  }
+  footer a { color: var(--green2); text-decoration: none; }
+
+  /* ── ANIMATIONS ───────────────────────────────────────── */
+  .fade-in {
+    opacity: 0;
+    transform: translateY(20px);
+    animation: fadeUp .7s ease forwards;
+  }
+  @keyframes fadeUp {
+    to { opacity: 1; transform: translateY(0); }
+  }
+  .delay-1 { animation-delay: .1s; }
+  .delay-2 { animation-delay: .2s; }
+  .delay-3 { animation-delay: .3s; }
+  .delay-4 { animation-delay: .5s; }
+</style>
+</head>
+<body>
+
+<!-- ── HERO ──────────────────────────────────────────────────────────────── -->
+<div class="hero">
+  <nav class="hero-nav">
+    <div class="logo">Tu Dinero · Tu Futuro</div>
+    <div class="badge">Eurostat HICP · 2004–2024</div>
+  </nav>
+
+  <div class="hero-body page">
+    <div class="hero-eyebrow fade-in">Guía de inversión personal</div>
+    <h1 class="hero-title fade-in delay-1">
+      Invertir,<br>o morir<br><em>comida por la<br>inflación.</em>
+    </h1>
+    <p class="hero-sub fade-in delay-2">
+      Una calculadora honesta sobre lo que le pasa a tu dinero si lo mueves… y si no lo mueves.
+      Números reales, sin eufemismos.
+    </p>
+    <div class="hero-stats fade-in delay-3" id="hero-stats">
+      <div class="hstat">
+        <div class="hstat-val good" id="h-final">—</div>
+        <div class="hstat-lbl">Saldo nominal</div>
+      </div>
+      <div class="hstat">
+        <div class="hstat-val" id="h-real">—</div>
+        <div class="hstat-lbl">Valor real (€ de hoy)</div>
+      </div>
+      <div class="hstat">
+        <div class="hstat-val bad" id="h-lost">—</div>
+        <div class="hstat-lbl">Si no inviertes, pierdes</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="hero-scroll">
+    <div class="scroll-arrow">
+      <span>Explorar</span>
+      <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+        <polyline points="6 9 12 15 18 9"/>
+      </svg>
+    </div>
+  </div>
+</div>
+
+<!-- ── CALCULADORA ────────────────────────────────────────────────────────── -->
+<section id="calculadora" style="background: var(--paper);">
+  <div class="page">
+    <div class="section-label">Calculadora interactiva</div>
+    <h2 class="section-title">Tu escenario personal</h2>
+    <p class="section-lead">Ajusta los parámetros. Los resultados se actualizan en tiempo real con la inflación descontada.</p>
+
+    <div class="controls-grid">
+      <div class="ctrl-group">
+        <div class="ctrl-top">
+          <span class="ctrl-label">💶 Inversión inicial</span>
+          <span class="ctrl-val" id="v-principal">2.000 €</span>
+        </div>
+        <input type="range" id="s-principal" min="0" max="100000" step="500" value="2000">
+      </div>
+
+      <div class="ctrl-group">
+        <div class="ctrl-top">
+          <span class="ctrl-label">📅 Aportación mensual</span>
+          <span class="ctrl-val" id="v-monthly">800 €</span>
+        </div>
+        <input type="range" id="s-monthly" min="0" max="5000" step="50" value="800">
+      </div>
+
+      <div class="ctrl-group">
+        <div class="ctrl-top">
+          <span class="ctrl-label">📈 Rendimiento anual</span>
+          <span class="ctrl-val" id="v-rate">6,0%</span>
+        </div>
+        <input type="range" id="s-rate" min="0.5" max="20" step="0.5" value="6">
+      </div>
+
+      <div class="ctrl-group">
+        <div class="ctrl-top">
+          <span class="ctrl-label">🗓 Años</span>
+          <span class="ctrl-val" id="v-years">21 años</span>
+        </div>
+        <input type="range" id="s-years" min="1" max="40" step="1" value="21">
+      </div>
+    </div>
+
+    <hr class="divider">
+
+    <div class="ctrl-group" style="max-width:480px; margin-bottom:1.25rem;">
+      <div class="ctrl-top">
+        <span class="ctrl-label">🔥 Inflación anual</span>
+        <span class="ctrl-val" id="v-infl">2,1%</span>
+      </div>
+      <input type="range" id="s-infl" min="0" max="15" step="0.1" value="2.1">
+      <div class="infl-presets">
+        <button class="preset-btn active" onclick="setInfl(2.1, this)">Media UE 2004–2024 (2,1%)</button>
+        <button class="preset-btn" onclick="setInfl(2.0, this)">Objetivo BCE (2,0%)</button>
+        <button class="preset-btn" onclick="setInfl(8.4, this)">Pico 2022 (8,4%)</button>
+        <button class="preset-btn" onclick="setInfl(0, this)">Sin inflación</button>
+      </div>
+    </div>
+
+    <hr class="divider">
+
+    <!-- KPIs -->
+    <div class="kpi-grid">
+      <div class="kpi">
+        <div class="kpi-label">Total aportado</div>
+        <div class="kpi-value" id="k-in">—</div>
+        <div class="kpi-sub">Tu dinero puesto</div>
+      </div>
+      <div class="kpi">
+        <div class="kpi-label">Saldo nominal</div>
+        <div class="kpi-value green" id="k-nom">—</div>
+        <div class="kpi-sub">En euros futuros</div>
+      </div>
+      <div class="kpi">
+        <div class="kpi-label">Valor real</div>
+        <div class="kpi-value green" id="k-real">—</div>
+        <div class="kpi-sub">Poder de compra hoy</div>
+      </div>
+      <div class="kpi">
+        <div class="kpi-label">Ganancia real</div>
+        <div class="kpi-value green" id="k-gain">—</div>
+        <div class="kpi-sub">Ya sin inflación</div>
+      </div>
+    </div>
+
+    <!-- Vista toggle -->
+    <div class="view-toggle">
+      <button class="view-btn active" id="btn-v1" onclick="setView('lines')">Nominal vs Real</button>
+      <button class="view-btn" id="btn-v2" onclick="setView('stack')">Desglose por capas</button>
+    </div>
+
+    <div class="chart-wrap">
+      <canvas id="mainChart"></canvas>
+    </div>
+
+    <div class="chart-legend" id="chart-legend"></div>
+
+    <div class="insight" id="main-insight"></div>
+  </div>
+</section>
+
+<!-- ── LA INFLACIÓN ────────────────────────────────────────────────────────── -->
+<section style="background: var(--cream);">
+  <div class="page">
+    <div class="section-label">El lado oscuro</div>
+    <h2 class="section-title">¿Qué pasa si no haces nada?</h2>
+    <p class="section-lead">Guardar dinero en una cuenta sin rendimiento no es ser prudente. Es dejar que la inflación lo consuma lentamente.</p>
+
+    <div class="insight danger">
+      <strong>Realidad incómoda:</strong> 10.000 € parados bajo el colchón hoy valen, en poder de compra real, mucho menos en el futuro. No desaparecen del extracto, pero sí de tu vida real.
+    </div>
+
+    <div class="erosion-vis" id="erosion-vis"></div>
+
+    <div class="callout-dark">
+      <div>
+        <div class="title">La tasa real<br>es lo que importa.</div>
+        <div class="sub" id="callout-sub">Rendimiento nominal menos inflación. Todo lo demás es ilusión de números grandes.</div>
+      </div>
+      <div class="stat-big">
+        <div class="val" id="callout-real-rate">—</div>
+        <div class="lbl">Tasa real anual</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ── ESCENARIOS ─────────────────────────────────────────────────────────── -->
+<section>
+  <div class="page">
+    <div class="section-label">Comparativa</div>
+    <h2 class="section-title">Cuatro perfiles, una decisión</h2>
+    <p class="section-lead">Todos calculados con la inflación media UE descontada. La fila resaltada es tu escenario actual.</p>
+
+    <div class="table-wrap">
+      <table id="scenarios-table">
+        <thead>
+          <tr>
+            <th>Perfil</th>
+            <th>Aportación/mes</th>
+            <th>Total aportado</th>
+            <th>Saldo nominal</th>
+            <th>Valor real</th>
+            <th>Ganancia real</th>
+          </tr>
+        </thead>
+        <tbody id="scenarios-body"></tbody>
+      </table>
+    </div>
+  </div>
+</section>
+
+<!-- ── REGLAS ──────────────────────────────────────────────────────────────── -->
+<section style="background: var(--cream);">
+  <div class="page">
+    <div class="section-label">Para empezar</div>
+    <h2 class="section-title">Las 5 reglas de oro</h2>
+    <p class="section-lead">No hace falta ser experta en finanzas. Solo hace falta estas cinco cosas.</p>
+
+    <div class="rules-grid">
+      <div class="rule-card">
+        <div class="rule-num">01</div>
+        <div class="rule-title">Empieza ya, aunque sea poco</div>
+        <div class="rule-body">El tiempo vale más que el capital inicial. 10 años de ventaja superan a cualquier cantidad extra invertida tarde.</div>
+      </div>
+      <div class="rule-card">
+        <div class="rule-num">02</div>
+        <div class="rule-title">Sé constante, sin excusas</div>
+        <div class="rule-body">200 €/mes durante 20 años baten a 40.000 € invertidos hoy y olvidados. La disciplina mensual gana al capital puntual.</div>
+      </div>
+      <div class="rule-card">
+        <div class="rule-num">03</div>
+        <div class="rule-title">Bate la inflación, ese es el mínimo</div>
+        <div class="rule-body">Cualquier rendimiento por encima del 2,1% ya es ganar en términos reales. Fondos indexados suelen ofrecer 6–8% histórico.</div>
+      </div>
+      <div class="rule-card">
+        <div class="rule-num">04</div>
+        <div class="rule-title">Diversifica, no improvises</div>
+        <div class="rule-body">ETFs del MSCI World, S&P 500, o un robo-advisor (Indexa Capital, MyInvestor) hacen el trabajo sin que tengas que mirar el mercado a diario.</div>
+      </div>
+      <div class="rule-card" style="grid-column: span 2;">
+        <div class="rule-num">05</div>
+        <div class="rule-title">No lo toques. El tiempo es la clave.</div>
+        <div class="rule-body">El peor enemigo del interés compuesto eres tú misma retirando antes de tiempo. Define un horizonte y no mires las caídas del mercado como pérdidas, sino como descuentos.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ── FOOTER ──────────────────────────────────────────────────────────────── -->
+<footer>
+  <p>Datos de inflación: <a href="https://ec.europa.eu/eurostat" target="_blank">Eurostat</a> HICP · Media Eurozona 2004–2024: 2,1% anual</p>
+  <p style="margin-top:.4rem;">Todos los cálculos asumen capitalización mensual continua · Los rendimientos históricos no garantizan rendimientos futuros</p>
+  <p style="margin-top:.4rem; color:rgba(250,250,247,.25);">Elaborado con cariño (y algo de miedo) · No es asesoramiento financiero</p>
+</footer>
+
+<script>
+// ── UTILS ──────────────────────────────────────────────────────────────────
+const fmtEur = (n, dec=0) => {
+  const abs = Math.abs(Math.round(n));
+  const str = abs.toLocaleString('de-DE');
+  return (n < 0 ? '−' : '') + str + ' €';
+};
+const fmtPct = v => v.toFixed(1).replace('.', ',') + '%';
+
+function calcFuture(P, M, rAnnual, years) {
+  const rm = rAnnual / 12, n = years * 12;
+  const nom = P * Math.pow(1+rm, n) + (M > 0 ? M * (Math.pow(1+rm,n)-1)/rm : 0);
+  return Math.round(nom);
+}
+function realValue(nom, inf, years) {
+  return Math.round(nom / Math.pow(1+inf, years));
+}
+function erosionVal(P, inf, years) {
+  return Math.round(P / Math.pow(1+inf, years));
+}
+
+// ── STATE ──────────────────────────────────────────────────────────────────
+const state = {
+  principal: 2000,
+  monthly:   800,
+  rate:      6,
+  years:     21,
+  infl:      2.1,
+  view:      'lines',
+};
+
+// ── CHART ──────────────────────────────────────────────────────────────────
+let chart = null;
+
+function buildChartData() {
+  const { principal: P, monthly: M, rate, years, infl } = state;
+  const r   = rate / 100, inf = infl / 100;
+  const labels = [], nominal = [], real = [], principal_line = [], contrib_arr = [], interests = [];
+
+  for (let y = 0; y <= years; y++) {
+    const n   = y * 12;
+    const rm  = r / 12;
+    const nom = Math.round(P * Math.pow(1+rm,n) + (M>0 ? M*(Math.pow(1+rm,n)-1)/rm : 0));
+    const rv  = realValue(nom, inf, y);
+    const cap = Math.min(P + M*n, nom);
+
+    labels.push(y===0 ? 'Hoy' : `Año ${y}`);
+    nominal.push(nom);
+    real.push(rv);
+    principal_line.push(P);
+    contrib_arr.push(cap);
+    interests.push(nom - cap);
+  }
+  return { labels, nominal, real, principal_line, contrib_arr, interests };
+}
+
+function getLegendHTML(view) {
+  if (view === 'lines') return `
+    <span class="legend-item"><span class="legend-dot" style="background:#1a6b45"></span>Saldo nominal</span>
+    <span class="legend-item"><span class="legend-dot" style="background:#b83232"></span>Valor real (poder de compra)</span>
+    <span class="legend-item"><span class="legend-dot" style="background:#ccc;"></span>Lo que aportaste</span>
+  `;
+  return `
+    <span class="legend-item"><span class="legend-dot" style="background:rgba(26,107,69,.8)"></span>Intereses generados</span>
+    <span class="legend-item"><span class="legend-dot" style="background:rgba(55,138,221,.7)"></span>Aportaciones mensuales</span>
+    <span class="legend-item"><span class="legend-dot" style="background:rgba(181,212,244,.8)"></span>Inversión inicial</span>
+    <span class="legend-item"><span class="legend-dot" style="background:#b83232"></span>Valor real</span>
+  `;
+}
+
+function renderChart() {
+  const d = buildChartData();
+  const isLines = state.view === 'lines';
+  document.getElementById('chart-legend').innerHTML = getLegendHTML(state.view);
+
+  const datasets = isLines ? [
+    { type:'line', label:'Nominal', data:d.nominal, borderColor:'#1a6b45', backgroundColor:'rgba(26,107,69,.07)', fill:true, tension:.35, pointRadius:0, borderWidth:2 },
+    { type:'line', label:'Valor real', data:d.real, borderColor:'#b83232', backgroundColor:'rgba(184,50,50,.07)', fill:true, tension:.35, pointRadius:0, borderWidth:2 },
+    { type:'line', label:'Aportado', data:d.contrib_arr, borderColor:'#ccc', backgroundColor:'transparent', fill:false, tension:0, pointRadius:0, borderWidth:1.5, borderDash:[5,4] },
+  ] : [
+    { type:'bar', label:'Intereses', data:d.interests, backgroundColor:'rgba(26,107,69,.8)', stack:'s' },
+    { type:'bar', label:'Aportaciones', data:d.contrib_arr.map((v,i)=>v-d.principal_line[i]), backgroundColor:'rgba(55,138,221,.7)', stack:'s' },
+    { type:'bar', label:'Inicial', data:d.principal_line, backgroundColor:'rgba(181,212,244,.8)', stack:'s' },
+    { type:'line', label:'Valor real', data:d.real, borderColor:'#b83232', backgroundColor:'transparent', fill:false, tension:.35, pointRadius:0, borderWidth:2 },
+  ];
+
+  const config = {
+    data: { labels: d.labels, datasets },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      interaction: { mode:'index', intersect:false },
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          backgroundColor: '#0f1117',
+          titleColor: '#fafaf7',
+          bodyColor: 'rgba(250,250,247,.7)',
+          padding: 12,
+          callbacks: {
+            label: ctx => ` ${ctx.dataset.label}: ${fmtEur(ctx.raw)}`,
+          }
+        }
+      },
+      scales: {
+        x: {
+          stacked: !isLines,
+          grid: { display:false },
+          ticks: { autoSkip:true, maxTicksLimit:9, font:{size:11}, color:'#9ca3af' }
+        },
+        y: {
+          stacked: !isLines,
+          grid: { color:'rgba(0,0,0,.06)' },
+          ticks: {
+            font:{size:11}, color:'#9ca3af',
+            callback: v => v >= 1000000 ? (v/1000000).toFixed(1)+'M €' : v >= 1000 ? (v/1000).toFixed(0)+'k €' : v+'€'
+          }
+        }
+      }
+    }
+  };
+
+  if (chart) {
+    chart.data   = config.data;
+    chart.options = config.options;
+    chart.update('active');
+  } else {
+    chart = new Chart(document.getElementById('mainChart'), config);
+  }
+}
+
+// ── EROSION VIS ────────────────────────────────────────────────────────────
+function renderErosion() {
+  const inf = state.infl / 100;
+  const rows = [0, 5, 10, 15, 21, 30].map(y => ({
+    y, val: erosionVal(10000, inf, y),
+  }));
+  const html = rows.map((r, i) => {
+    const pct = (r.val / 10000) * 100;
+    const hue = pct > 80 ? '#1a6b45' : pct > 60 ? '#b07000' : '#b83232';
+    const bgHue = pct > 80 ? 'rgba(26,107,69,.15)' : pct > 60 ? 'rgba(176,112,0,.15)' : 'rgba(184,50,50,.15)';
+    return `
+      <div class="erosion-row">
+        <div class="erosion-year">${r.y===0?'Hoy':r.y+' años'}</div>
+        <div class="erosion-bar-wrap">
+          <div class="erosion-bar" style="width:${pct}%; background:${hue}; opacity:.8;"></div>
+        </div>
+        <div class="erosion-amount" style="color:${hue}">${fmtEur(r.val)} <span style="color:#9ca3af;font-size:.72rem;">(${Math.round(pct)}%)</span></div>
+      </div>
+    `;
+  }).join('');
+  document.getElementById('erosion-vis').innerHTML = html;
+}
+
+// ── SCENARIOS TABLE ────────────────────────────────────────────────────────
+function renderScenarios() {
+  const { principal: P, rate, years, infl } = state;
+  const inf = infl / 100;
+
+  const scenarios = [
+    { label:'Prudente · 4%, 200 €/mes', M:200,  r:0.04 },
+    { label:'Conservador · 5%, 400 €/mes', M:400, r:0.05 },
+    { label:'⭐ Tu escenario · 6%, 800 €/mes', M:state.monthly, r:rate/100, highlight:true },
+    { label:'Activo · 7%, 1.200 €/mes', M:1200, r:0.07 },
+  ];
+
+  const rows = scenarios.map(s => {
+    const nom  = calcFuture(P, s.M, s.r, years);
+    const rv   = realValue(nom, inf, years);
+    const tin  = P + s.M * years * 12;
+    const gain = rv - tin;
+    const cls  = gain >= 0 ? 'gain-pos' : 'gain-neg';
+    return `
+      <tr class="${s.highlight?'highlight':''}">
+        <td>${s.label}</td>
+        <td>${fmtEur(s.M)}</td>
+        <td>${fmtEur(tin)}</td>
+        <td>${fmtEur(nom)}</td>
+        <td>${fmtEur(rv)}</td>
+        <td class="${cls}">${gain>=0?'+':''}${fmtEur(gain)}</td>
+      </tr>
+    `;
+  }).join('');
+  document.getElementById('scenarios-body').innerHTML = rows;
+}
+
+// ── MAIN UPDATE ────────────────────────────────────────────────────────────
+function update() {
+  const { principal: P, monthly: M, rate, years, infl } = state;
+  const r = rate / 100, inf_r = infl / 100;
+  const nom   = calcFuture(P, M, r, years);
+  const rv    = realValue(nom, inf_r, years);
+  const tin   = P + M * years * 12;
+  const gain  = rv - tin;
+  const realR = ((1+r)/(1+inf_r)-1)*100;
+
+  // KPIs
+  document.getElementById('k-in').textContent   = fmtEur(tin);
+  document.getElementById('k-nom').textContent  = fmtEur(nom);
+  document.getElementById('k-real').textContent = fmtEur(rv);
+  const kg = document.getElementById('k-gain');
+  kg.textContent = (gain>=0?'+':'') + fmtEur(gain);
+  kg.className   = 'kpi-value ' + (gain>=0?'green':'red');
+
+  // Hero stats
+  document.getElementById('h-final').textContent = fmtEur(nom);
+  document.getElementById('h-real').textContent  = fmtEur(rv);
+  document.getElementById('h-lost').textContent  = fmtEur(erosionVal(P + M*years*12, inf_r, years) - tin);
+
+  // Callout
+  const crEl = document.getElementById('callout-real-rate');
+  crEl.textContent = (realR >= 0 ? '+' : '') + fmtPct(realR);
+  crEl.style.color = realR >= 0 ? '#2d9b63' : '#e05c5c';
+
+  const calloutSub = document.getElementById('callout-sub');
+  if (realR <= 0) {
+    calloutSub.textContent = `⚠️ Tu rendimiento (${fmtPct(rate)}) no supera la inflación (${fmtPct(infl)}). En términos reales estás perdiendo poder adquisitivo cada año.`;
+  } else {
+    calloutSub.textContent = `Tu rendimiento del ${fmtPct(rate)} menos la inflación del ${fmtPct(infl)} = ${fmtPct(realR)} de ganancia real anual. Eso es lo que realmente crece tu poder de compra.`;
+  }
+
+  // Insight
+  const ins = document.getElementById('main-insight');
+  const erosion = Math.round((1 - rv/nom)*100);
+  if (realR <= 0) {
+    ins.className = 'insight danger';
+    ins.innerHTML = `<strong>⚠️ Atención:</strong> Con esta combinación de rendimiento e inflación, estás perdiendo poder adquisitivo. Necesitas un rendimiento superior al ${fmtPct(infl)} para avanzar de verdad.`;
+  } else {
+    ins.className = 'insight';
+    const mult = (rv/tin).toFixed(1);
+    ins.innerHTML = `<strong>✅ Resultado:</strong> En ${years} años tu dinero se multiplica <strong>×${mult}</strong> en términos reales. La inflación se lleva el ${erosion}% del saldo nominal — pero aun así ganas <strong>${fmtEur(gain)}</strong> en poder de compra real.`;
+  }
+
+  renderChart();
+  renderErosion();
+  renderScenarios();
+}
+
+// ── CONTROLS ───────────────────────────────────────────────────────────────
+function bindSlider(id, stateKey, display, transform) {
+  const el = document.getElementById(id);
+  const updateDisplay = () => {
+    const v = parseFloat(el.value);
+    state[stateKey] = v;
+    document.getElementById(display).textContent = transform(v);
+    update();
+  };
+  el.addEventListener('input', updateDisplay);
+}
+
+bindSlider('s-principal', 'principal', 'v-principal', v => fmtEur(v));
+bindSlider('s-monthly',   'monthly',   'v-monthly',   v => fmtEur(v));
+bindSlider('s-rate',      'rate',      'v-rate',      v => fmtPct(v));
+bindSlider('s-years',     'years',     'v-years',     v => `${v} año${v===1?'':'s'}`);
+bindSlider('s-infl',      'infl',      'v-infl',      v => fmtPct(v));
+
+function setInfl(v, btn) {
+  document.getElementById('s-infl').value = v;
+  state.infl = v;
+  document.getElementById('v-infl').textContent = fmtPct(v);
+  document.querySelectorAll('.preset-btn').forEach(b => b.classList.remove('active'));
+  if (btn) btn.classList.add('active');
+  update();
+}
+
+function setView(v) {
+  state.view = v;
+  document.getElementById('btn-v1').className = 'view-btn' + (v==='lines'?' active':'');
+  document.getElementById('btn-v2').className = 'view-btn' + (v==='stack'?' active':'');
+  renderChart();
+}
+
+// ── INIT ────────────────────────────────────────────────────────────────────
+update();
+</script>
+</body>
+</html>
